@@ -2,9 +2,9 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <random>
 
 #include "timer.h"
-#include <random>
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Random utility function
@@ -20,7 +20,7 @@ int random_int_in_range(int start, int end)
 ////////////////////////////////////////////////////////////////////////////////////
 // Client derived monitors
 ////////////////////////////////////////////////////////////////////////////////////
-class cout_monitor : public timer_monitor
+class cout_monitor : public performance::timer_monitor
 {
 public:
    void add_measurement(std::chrono::milliseconds duration_in_ms) override
@@ -29,7 +29,7 @@ public:
    }
 };
 
-class performance_monitor : public timer_monitor
+class performance_monitor : public performance::timer_monitor
 {
 public:
    void add_measurement(std::chrono::milliseconds duration_in_ms) override
@@ -56,7 +56,7 @@ int main()
    cout_monitor coutmonitor;
    for(int i = 0; i < 5; ++i)
    {
-      timer timer(coutmonitor);
+      performance::timer timer(coutmonitor);
       std::this_thread::sleep_for(std::chrono::milliseconds(random_int_in_range(0, 1000)));
    }
 
@@ -65,11 +65,31 @@ int main()
    performance_monitor perf_monitor;
    for (int i = 0; i < 5; ++i)
    {
-      timer timer(perf_monitor);
+      performance::timer timer(perf_monitor);
       std::this_thread::sleep_for(std::chrono::milliseconds(random_int_in_range(0, 1000)));
    }
 
    for(auto& m : perf_monitor.get_measurements())
+   {
+      std::cout << m << ", ";
+   }
+   std::cout << std::endl;
+
+   // Convenience wrapper timer
+   std::cout << "Performance Monitor Convenience Function: " << std::endl;
+   performance_monitor perf_conv_monitor;
+   for (int i = 0; i < 5; ++i)
+   {
+      performance::measure(
+         perf_conv_monitor, 
+         []()
+         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(random_int_in_range(0, 1000)));
+         }
+      );
+   }
+
+   for (auto& m : perf_conv_monitor.get_measurements())
    {
       std::cout << m << ", ";
    }
